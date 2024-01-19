@@ -24,7 +24,7 @@ export const useTracker = () => {
   let pausedTime = useStorage<number | null>("pausedTime", null);
   let timeToStart = 0;
   if (pausedTime.value) {
-    timeToStart = pausedTime.value;
+    timeToStart = Number(pausedTime.value);
   } else if (startedTime.value) {
     timeToStart = Math.floor(
       (Date.now() - new Date(startedTime.value).getTime()) / 1000
