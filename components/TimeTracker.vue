@@ -12,35 +12,58 @@ const emits = defineEmits<{
   log: [];
 }>();
 
+const wasRunning = ref<boolean>(false);
+
 const description = ref<string>("");
 
 const creatingTracking = ref<boolean>(false);
 
+const toast = useToast();
+
 const createTracking = async (id: string) => {
+  wasRunning.value = isRunning.value;
   stopTimer();
   creatingTracking.value = true;
 };
 const cancelTrackingRequest = async () => {
-  startTimer();
+  if (wasRunning.value) startTimer();
   creatingTracking.value = false;
 };
 const createTrackingRequest = async () => {
-  await $fetch("/api/log", {
-    method: "POST",
-    body: {
-      time: time.value,
-      description: description.value,
-    },
-  });
-  resetTimer();
-  description.value = "";
-  creatingTracking.value = false;
-  emits("log");
+  try {
+    const tracking = await $fetch("/api/trackings", {
+      method: "POST",
+      body: {
+        time: time.value,
+        description: description.value,
+      },
+    });
+    if (tracking.id) {
+      toast.add({
+        title: "Tracking created",
+        description: "Tracking created successfully",
+        color: "green",
+      });
+      resetTimer();
+      emits("log");
+    } else {
+      throw new Error("Error creating tracking");
+    }
+  } catch (e) {
+    toast.add({
+      title: "Error",
+      description: "Error creating tracking",
+      color: "red",
+    });
+  } finally {
+    description.value = "";
+    creatingTracking.value = false;
+  }
 };
 </script>
 
 <template>
-  <UModal v-model="creatingTracking">
+  <UModal v-model="creatingTracking" @close="cancelTrackingRequest">
     <div class="p-4 gap-6 flex flex-col items-center justify-center">
       <div class="text-xl text-primary">Create Tracking</div>
       <UFormGroup class="w-full">
